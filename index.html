@@ -1,0 +1,330 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <title>Trang web hiển thị Google Map</title>
+  <script src="https://cdn.tailwindcss.com"></script> <!-- Dùng thư viện hỗ trợ -->
+  <script src="https://cdn.jsdelivr.net/npm/echarts@5.3.0/dist/echarts.min.js"></script>
+  <style>
+    html,
+    body,
+    #map {
+      height: 100%;
+      margin: 0;
+      padding: 0;
+    }
+  </style>
+  <?!= include('styles'); ?>
+</head>
+
+<body>
+  <div id="map"></div>
+
+<script>
+    google.script.run.withSuccessHandler(function(keyGoogleMap) {
+        const scriptElement = document.createElement("script");
+        scriptElement.src = "https://maps.googleapis.com/maps/api/js?key=" + keyGoogleMap + "&libraries=places";
+        scriptElement.async = true;
+        scriptElement.defer = true;
+        document.head.appendChild(scriptElement);
+    }).getKeyGoogleMap();
+</script>
+
+  <div class="header">
+    <img class="logo" src="https://drive.google.com/uc?export=download&id=1ryRf7YyM-l6-arrBONyrKEfc3R8LPg8B" alt="Logo">
+  </div>
+  <div class="controls-container">
+    <input id="search-box" type="text" placeholder="Nhập địa điểm">
+    <img id="locate-button" src="https://drive.google.com/uc?export=download&id=1TYAbje8OYnl5siwI1pz3AhZ3gnux2dOw" alt="Locate">
+  </div>
+
+  <div id="loading-overlay">
+    <div id="loading-gif">
+      <svg xmlns="http://www.w3.org/2000/svg" xmlns:xlink="http://www.w3.org/1999/xlink"
+        style="margin: auto; display: block;" width="100px" height="100px" viewBox="0 0 100 100"
+        preserveAspectRatio="xMidYMid">
+        <!-- Đoạn mã SVG của ảnh GIF chờ -->
+        <circle cx="50" cy="50" r="25" fill="#f8b26a"></circle>
+        <g>
+          <path d="M43 23L57 23L50 10Z" transform="rotate(30 50 50)" fill="#e15b64"></path>
+          <path d="M43 23L57 23L50 10Z" transform="rotate(60 50 50)" fill="#e15b64"></path>
+          <path d="M43 23L57 23L50 10Z" transform="rotate(90 50 50)" fill="#e15b64"></path>
+          <path d="M43 23L57 23L50 10Z" transform="rotate(120 50 50)" fill="#e15b64"></path>
+          <path d="M43 23L57 23L50 10Z" transform="rotate(150 50 50)" fill="#e15b64"></path>
+          <path d="M43 23L57 23L50 10Z" transform="rotate(180 50 50)" fill="#e15b64"></path>
+          <path d="M43 23L57 23L50 10Z" transform="rotate(210 50 50)" fill="#e15b64"></path>
+          <path d="M43 23L57 23L50 10Z" transform="rotate(240 50 50)" fill="#e15b64"></path>
+          <path d="M43 23L57 23L50 10Z" transform="rotate(270 50 50)" fill="#e15b64"></path>
+          <path d="M43 23L57 23L50 10Z" transform="rotate(300 50 50)" fill="#e15b64"></path>
+          <path d="M43 23L57 23L50 10Z" transform="rotate(330 50 50)" fill="#e15b64"></path>
+          <path d="M43 23L57 23L50 10Z" transform="rotate(360 50 50)" fill="#e15b64"></path>
+          <animateTransform attributeName="transform" type="rotate" repeatCount="indefinite" dur="4s"
+            values="0 50 50;180 50 50" keyTimes="0;1"></animateTransform>
+        </g>
+      </svg>
+    </div>
+  </div>
+
+  </div>
+
+  <div class="fixed top-[10px] right-[2px] md:right-[50px] z-[1] block md:flex">
+    <div class="p-2 rounded-md bg-white ml-2 mb-2 w-fit hover:shadow-lg">
+      <img id="languageIcon" onclick="toggleLanguage()" src="https://drive.google.com/uc?export=download&id=1E7pjWBAbApmblqF_HjgTMu_ixwyRGcpL" class="sm:w-[60px] w-[50px]"> 
+    </div>
+
+    <div class="p-2 rounded-md bg-white ml-2 mb-2 w-fit hover:shadow-lg">
+      <img onclick="toggleType('humidity')" src="https://drive.google.com/uc?export=download&id=1FM9q-Gkoep9Qz_TqlkeYMt6laS-t1TiC" class="sm:w-[60px] w-[50px]">
+    </div>
+
+    <div class="p-2 rounded-md bg-white ml-2 mb-2 w-fit hover:shadow-lg">
+      <img onclick="toggleType('temperature')" src="https://drive.google.com/uc?export=download&id=1cU4QyxDlFaVmYyFkAqqHM15AgLga3Ko3" class="sm:w-[60px] w-[50px]">
+    </div>
+  </div>
+
+  <div class="fixed bottom-[10px] left-[50%] z-[1] translate-x-[-50%] ">
+    <div class="bg-violet-950 text-center text-white w-[fit-content] px-[10px] mx-auto mb-[5px] rounded-lg"
+      id="thang_do">VN AQI</div>
+
+    <div id="thang_do_aqi" class="flex rounded-lg overflow-hidden sm:w-full w-[350px]">
+      <div class="text-center text-white text-sm w-[90px] bg-lime-500">0-50</div>
+      <div class="text-center text-white text-sm w-[90px] bg-yellow-500">50-100</div>
+      <div class="text-center text-white text-sm w-[90px] bg-orange-500">101-150</div>
+      <div class="text-center text-white text-sm w-[90px] bg-red-500">151-200</div>
+      <div class="text-center text-white text-sm w-[90px] bg-purple-500">201-300</div>
+      <div class="text-center text-white text-sm w-[90px] bg-rose-500">300+</div>
+    </div>
+
+    <div id="thang_do_do_am"
+      class="hidden rounded-lg overflow-hidden w-[calc(100vw_-_110px)] md:w-[540px] h-[20px] justify-around text-white text-[13px]"
+      style="background-image: linear-gradient(to right, #995C34 , #A6673B, #AC7642, #A99848, #59B057, #38A79D, #3B96AD, #2E88AD, #326E9F, #3B4B74, #2E4065 );">
+      <div>0</div>
+      <div>10</div>
+      <div>20</div>
+      <div>30</div>
+      <div>40</div>
+      <div>50</div>
+      <div>60</div>
+      <div>70</div>
+      <div>80</div>
+      <div>90</div>
+      <div>100</div>
+    </div>
+
+    <div id="thang_do_nhiet_do"
+      class="hidden rounded-lg overflow-hidden w-[calc(100vw_-_110px)] md:w-[540px] h-[20px] justify-around text-white text-[13px]"
+      style="background-image: linear-gradient(to right, #101233 , #531F56, #99418F, #8A52A0, #426BB2, #61C9E1, #DADC34, #F6A123, #EA681F, #D81313, #9E1010 );">
+      <div>-50</div>
+      <div>-40</div>
+      <div>-30</div>
+      <div>-20</div>
+      <div>-10</div>
+      <div>0</div>
+      <div>10</div>
+      <div>20</div>
+      <div>30</div>
+      <div>40</div>
+      <div>50</div>
+    </div>
+  </div>
+
+  <!-- Modal Thong tin -->
+  <!-- Main modal -->
+  <div id="modal-thong-tin"
+    class="fixed sm:top-0 top-[-70px] left-0 right-0 z-[999] w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[100vh] max-h-full bg-[#00000078] hidden">
+
+    <div class="w-full max-w-fit max-h-full m-[auto] mt-32">
+
+      <!-- Modal content -->
+      <div class="relative bg-white rounded-lg shadow bottom-10">
+        <span id="close-modal-thong-tin" class="close">&times;</span>
+        <!-- Modal body -->
+        <div class="p-4 space-y-4 flex flex-col gap-3 h-[588px] sm:h-full overflow-y-auto ">
+          <!-- 0-50 -->
+          <div class="flex items-center">
+            <div class="mr-3">
+              <img src="https://drive.google.com/uc?export=download&id=1zqnl_OY11P_lFREoQ14wMpAuzEmlDHCX" class="sm:w-[70px] w-[40px] sm:h-[70px] h-[40px]" alt='' />
+            </div>
+            <div class="sm:w-[400px] w-[340px] break-words">
+              <p class="font-bold text-[25px]">
+                0-50: Tốt
+              </p>
+              <p>
+                Chất lượng không khí tốt, không ảnh hưởng tới sức khỏe
+              </p>
+            </div>
+          </div>
+
+          <!-- 51-100 -->
+          <div class="flex items-center">
+            <div class="mr-3">
+              <img src="https://drive.google.com/uc?export=download&id=1j5HNS05dEV3B8T-LS3QId9qgwMSZ_h12" class="sm:w-[70px] w-[40px] sm:h-[70px] h-[40px]" alt='' />
+            </div>
+            <div class="sm:w-[400px] w-[340px] break-words">
+              <p class="font-bold text-[25px]">
+                51-100: Trung bình
+              </p>
+              <p>
+                Chất lượng không khí ở mức chấp nhận được. Tuy nhiên, đối với những người nhạy cảm (người già, trẻ em,
+                người mắc các bệnh hô hấp, tim mạch…) có thể chịu những tác động nhất định tới sức khỏe.
+              </p>
+            </div>
+          </div>
+
+          <!-- 101-150: Kém -->
+          <div class="flex items-center">
+            <div class="mr-3">
+              <img src="https://drive.google.com/uc?export=download&id=13q7EaFdpSfRDHdN9kGnbJ1L4aqE1wTYx" class="sm:w-[70px] w-[40px] sm:h-[70px] h-[40px]" alt='' />
+            </div>
+            <div class="sm:w-[400px] w-[340px] break-words">
+              <p class="font-bold text-[25px]">
+                101-150: Kém
+              </p>
+              <p>
+                Những người nhạy cảm gặp phải các vấn đề về sức khỏe, những người bình thường ít ảnh hưởng.
+              </p>
+            </div>
+          </div>
+
+          <!-- 151-200: Xấu -->
+          <div class="flex items-center">
+            <div class="mr-3">
+              <img src="https://drive.google.com/uc?export=download&id=1h2H9pP-o_bN1htxVOn-WWesigbFa6VmV" class="sm:w-[70px] w-[40px] sm:h-[70px] h-[40px]" alt='' />
+            </div>
+            <div class="sm:w-[400px] w-[340px] break-words">
+              <p class="font-bold text-[25px]">
+                151-200: Xấu
+              </p>
+              <p>
+                Những người bình thường bắt đầu có các ảnh hưởng tới sức khỏe, nhóm người nhạy cảm có thể gặp những vấn
+                đề sức khỏe nghiêm trọng hơn.
+              </p>
+            </div>
+          </div>
+
+          <!-- 201-300: Rất xấu -->
+          <div class="flex items-center">
+            <div class="mr-3">
+              <img src="https://drive.google.com/uc?export=download&id=16h5efl1OjIN1eaOzy1kEDy0INVvHRPmX" class="sm:w-[70px] w-[40px] sm:h-[70px] h-[40px]" alt='' />
+            </div>
+            <div class="sm:w-[400px] w-[340px] break-words">
+              <p class="font-bold text-[25px]">
+                201-300: Rất xấu
+              </p>
+              <p>
+                Cảnh báo hưởng tới sức khỏe: mọi người bị ảnh hưởng tới sức khỏe nghiêm trọng hơn.
+              </p>
+            </div>
+          </div>
+
+          <!-- 300+: Nguy hại -->
+          <div class="flex items-center">
+            <div class="mr-3">
+              <img src="https://drive.google.com/uc?export=download&id=16wA0uyql7IWoyxGRQc4yCgtizgtystzd" class="sm:w-[70px] w-[40px] sm:h-[70px] h-[40px]" alt='' />
+            </div>
+            <div class="sm:w-[400px] w-[340px] break-words">
+              <p class="font-bold text-[25px]">
+                300+: Nguy hại
+              </p>
+              <p>
+                Cảnh báo khẩn cấp về sức khỏe: Toàn bộ dân số bị ảnh hưởng tới sức khỏe tới mức nghiêm trọng.
+              </p>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modal Near Station -->
+
+  <div id="modal_nearStation"
+    class="fixed sm:top-0 top-[-70px] left-0 right-0 z-[999] w-full p-4 overflow-x-hidden overflow-y-auto md:inset-0 h-[100vh] max-h-full bg-[#00000078] hidden">
+    <div class="w-full max-w-fit max-h-full m-[auto] mt-32">
+
+      <!-- Modal content -->
+      <div class="relative bg-white rounded-lg shadow bottom-10">
+        <span id="close-modal-nearStation" class="text-gray-500 text-[28px] font-bold cursor-pointer absolute block right-2 top-0 hover:text-black">&times;</span>
+        <!-- Modal body -->
+        <div class="p-4 space-y-4 flex flex-col gap-3 ">
+          <div id="title_diemdoganban" class="text-3xl font-semibold flex justify-center text-center ">ĐIỂM ĐO GẦN BẠN
+          </div>
+          <!-- Nội dung cần hiển thị -->
+          <!-- Diem do thu nhat -->
+          <div class="sm:w-fit w-[325px] m-[auto] mb-1 shadow-md mt-5" id="diem_do_1">
+            <div id="header1" class="p-2 bg-lime-400 text-white rounded-t-lg">
+              <div id="location1" class="text-xl font-semibold flex justify-center"></div>
+              <div id="address1" class="flex justify-center sm:w-[446px] w-[325px] break-words text-center">Quận Phú
+                Nhuận - Thành
+                phố Hồ Chí Minh (10.797848,
+                106.690378)
+              </div>
+            </div>
+            <div id="content1" class="grid grid-cols-3 gap-2 p-2 bg-lime-500 text-white rounded-b-lg text-center">
+              <div>
+                <div id="aqi_title1" class="text-lg font-semibold">VN AQI</div>
+                <div id="aqi_vn1" class="text-4xl font-bold ">17</div>
+                <div id="pm25_value1" class="font-semibold mt-8">9.70</div>
+                <div>
+                  PM 2.5
+                </div>
+              </div>
+              <div>
+                <div class="w-[90px] h-[90px] mx-auto">
+                  <img id="faceImg1" src="https://drive.google.com/uc?export=download&id=1zqnl_OY11P_lFREoQ14wMpAuzEmlDHCX" class="w-full h-full">
+                </div>
+                <div id="humidity_value1" class="font-semibold mt-3">71.58</div>
+                <div>
+                  Độ ẩm (%)
+                </div>
+              </div>
+              <div>
+                <div id="environment_state1" class="mt-8 text-xl">Tốt</div>
+                <div id="temperature_value1" class="mt-10">28</div>
+                <div>Nhiệt độ (°C)</div>
+              </div>
+            </div>
+          </div>
+          <!-- Diem do thu hai -->
+          <div class="sm:w-fit w-[325px] m-[auto] shadow-md " id="diem_do_2">
+            <div id="header2" class="p-2 bg-lime-400 text-white rounded-t-lg">
+              <div id="location2" class="text-xl font-semibold flex justify-center">Đại học Sư phạm Kỹ thuật</div>
+              <div id="address2" class="flex justify-center sm:w-[446px] w-[325px] break-words text-center">Thủ Đức - Thành
+                phố Hồ Chí Minh (10.8506324,
+                106.7719131)</div>
+            </div>
+            <div id="content2" class="grid grid-cols-3 gap-2 p-2 bg-lime-500 text-white rounded-b-lg text-center">
+              <div>
+                <div id="aqi_title2" class="text-lg font-semibold">VN AQI</div>
+                <div id="aqi_vn2" class="text-4xl font-bold">17</div>
+                <div id="pm25_value2" class="font-semibold mt-8">9.70</div>
+                <div>
+                  PM 2.5
+                </div>
+              </div>
+              <div>
+                <div class="w-[90px] h-[90px] mx-auto">
+                  <img id="faceImg2" src="https://drive.google.com/uc?export=download&id=1zqnl_OY11P_lFREoQ14wMpAuzEmlDHCX" class="w-full h-full">
+                </div>
+                <div id="humidity_value2" class="font-semibold mt-3">71.58</div>
+                <div>
+                  Độ ẩm (%)
+                </div>
+              </div>
+              <div>
+                <div id="environment_state2" class="mt-8 text-xl">Tốt</div>
+                <div id="temperature_value2" class="mt-10">28</div>
+                <div>Nhiệt độ (°C)</div>
+              </div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <?!= include('airstationMark'); ?>
+</body>
+
+</html>
